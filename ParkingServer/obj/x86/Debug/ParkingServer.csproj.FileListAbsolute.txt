@@ -1,0 +1,12 @@
+c:\users\hov\documents\visual studio 2010\Projects\ParkingServer\ParkingServer\obj\x86\Debug\ParkingServer.Properties.Resources.resources
+c:\users\hov\documents\visual studio 2010\Projects\ParkingServer\ParkingServer\obj\x86\Debug\ParkingServer.csproj.GenerateResource.Cache
+c:\users\hov\documents\visual studio 2010\Projects\ParkingServer\ParkingServer\bin\Debug\ParkingServer.exe
+c:\users\hov\documents\visual studio 2010\Projects\ParkingServer\ParkingServer\bin\Debug\ParkingServer.pdb
+c:\users\hov\documents\visual studio 2010\Projects\ParkingServer\ParkingServer\obj\x86\Debug\ParkingServer.SocketServer.resources
+c:\users\hov\documents\visual studio 2010\Projects\ParkingServer\ParkingServer\obj\x86\Debug\ParkingServer.exe
+c:\users\hov\documents\visual studio 2010\Projects\ParkingServer\ParkingServer\obj\x86\Debug\ParkingServer.pdb
+C:\Users\Hov\documents\visual studio 2010\Projects\ParkingServer\ParkingServer\obj\x86\Debug\ParkingServer.csprojResolveAssemblyReference.cache
+C:\Users\Hov\documents\visual studio 2010\Projects\ParkingServer\ParkingServer\bin\Debug\MySql.Data.dll
+C:\Users\Hov\documents\visual studio 2010\Projects\ParkingServer\ParkingServer\bin\Debug\MySql.Data.Entity.dll
+C:\Users\Hov\documents\visual studio 2010\Projects\ParkingServer\ParkingServer\bin\Debug\MySql.Data.Entity.EF6.dll
+C:\Users\Hov\documents\visual studio 2010\Projects\ParkingServer\ParkingServer\bin\Debug\MySql.Fabric.Plugin.dll
