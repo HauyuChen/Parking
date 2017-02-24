@@ -13,12 +13,16 @@ namespace ParkingServer
 {
     public partial class SocketServer : Form
     {
+        private List<User> userList = new List<User>();
+        private TcpListener myListener;
         Socket socketWatch;
         Socket socketSend;
         Dictionary<string, Socket> dicSocket = new Dictionary<string, Socket>();
         string ZigBee="";  //标识：ZigBee网络地址
         string WeChat="";  //标识：WeChat网络地址
         string WinPC="";   //标识：WinPC网络地址
+        bool isNormalExit = false;
+
 
         public SocketServer()
         {
@@ -42,16 +46,18 @@ namespace ParkingServer
         {
             try
             {
-                socketWatch = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                IPEndPoint point = new IPEndPoint(IPAddress.Parse("127.0.0.1"), Convert.ToInt32("10086"));
-                socketWatch.Bind(point);
-                Logger("启动服务器成功。");
-                socketWatch.Listen(10);
+                myListener = new TcpListener(IPAddress.Parse("127.0.0.1"), Convert.ToInt32("10086"));
+                myListener.Start();
+                //socketWatch = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                //IPEndPoint point = new IPEndPoint(IPAddress.Parse("127.0.0.1"), Convert.ToInt32("10086"));
+                //socketWatch.Bind(point);
+                //Logger("启动服务器成功。");
+                //socketWatch.Listen(10);
 
                 //启动线程
                 Thread th = new Thread(Accept);
                 th.IsBackground = true;
-                th.Start(socketWatch);
+                th.Start();
 
                 //禁用StartBind button
                 btnStartBind.Enabled = false;
@@ -92,32 +98,43 @@ namespace ParkingServer
          ** Accept：接收连接请求
          */
         #region Accept
-        private void Accept(object socketObj)
+        private void Accept()
         {
-            try
+            TcpClient newClient = null;
+            while (true)
             {
-                Socket socketWatch = socketObj as Socket;
-                while (true)
+
+                try
                 {
-                    socketSend = socketWatch.Accept();
-                    Logger(socketSend.RemoteEndPoint.ToString() + "连接成功");
-                    dicSocket.Add(socketSend.RemoteEndPoint.ToString(), socketSend);
-                    cboUserList.Items.Add(socketSend.RemoteEndPoint.ToString());
+                    newClient = myListener.AcceptTcpClient();
+                    //Socket socketWatch = socketObj as Socket;
+                    //while (true)
+                    //{
+                    //    socketSend = socketWatch.Accept();
+                    //    Logger(socketSend.RemoteEndPoint.ToString() + "连接成功");
+                    //    dicSocket.Add(socketSend.RemoteEndPoint.ToString(), socketSend);
+                    //    cboUserList.Items.Add(socketSend.RemoteEndPoint.ToString());
 
-                    //设置Combobox的默认值
-                    if (cboUserList.Items.Count > 0)
-                    {
-                        cboUserList.SelectedIndex = 0;
-                    }
+                    //    //设置Combobox的默认值
+                    //    if (cboUserList.Items.Count > 0)
+                    //    {
+                    //        cboUserList.SelectedIndex = 0;
+                    //    }
 
-                    //启动线程
-                    Thread th = new Thread(Receive);
-                    th.IsBackground = true;
-                    th.Start();
+                    //    //启动线程
+                    //    Thread th = new Thread(Receive);
+                    //    th.IsBackground = true;
+                    //    th.Start();
+                    //}
                 }
-            }
-            catch (Exception)
-            {
+                catch
+                {
+                    break;
+                }
+                User user = new User(newClient);
+                Thread threadReceive = new Thread(Receive);
+                threadReceive.Start(user);
+                userList.Add(user);
             }
         }
         #endregion
@@ -127,51 +144,119 @@ namespace ParkingServer
          ** Receive：接收数据
          */
         #region Receive
-        private void Receive()
+        private void Receive(object userState)
         {
-            try
-            {
-                while (true)
+            User user = (User)userState;
+            TcpClient client = user.client;
+            
+            while (isNormalExit == false) {
+                string receiveString = null;
+                
+                try
                 {
-                    byte[] buffer = new byte[1024 * 1024 * 5];
-                    int r = socketSend.Receive(buffer);
-                    if (r == 0)
-                    {
-                        break;
-                    }
-                    string strMsg = Encoding.UTF8.GetString(buffer, 0, r);
-
-                    switch(strMsg.Substring(0,2)){
-
-                        /* ZigBee端消息处理 */ 
-                        case "ZB":
-                            if (ZigBee == "") {
-                                ZigBee = socketSend.RemoteEndPoint.ToString();  //保存ZigBee网络地址
-                            }
-                            
-                            doZigBee(strMsg);                               //ZigBee端消息处理
-                            break;
-
-                        /* WeChat端消息处理 */ 
-                        case "WC":  
-                            WeChat = socketSend.RemoteEndPoint.ToString();  //保存WeChat网络地址
-                            doWeChat(strMsg);                               //WeChat端消息处理
-                            break;
-
-                        /* WinPC端消息处理 */ 
-                        case "PC":
-                            if (WinPC == "") {
-                                WinPC = socketSend.RemoteEndPoint.ToString();   //保存WinPC网络地址
-                            }
-                            
-                            doWinPC(strMsg);                                //WinPC端消息处理
-                            break;
-                    }         
+                    Logger("Hi");
+                    //从网络流中读出字符串，此方法会自动判断字符串长度前缀
+                    receiveString = user.br.ReadString();
+                    Logger("Hi2222");
+                    Logger(receiveString);
                 }
+                catch (Exception)
+                {
+                    if (isNormalExit == false)
+                    {
+                        //AddItemToListBox(string.Format("与[{0}]失去联系，已终止接收该用户信息", client.Client.RemoteEndPoint));
+                        RemoveUser(user);
+                    }
+                    break;
+                }
+                switch (receiveString)
+                {
+                    
+                    /* ZigBee端消息处理 */
+                    case "ZB":
+                        Logger("Hi");
+                        //Logger(user.userName);
+                        break;
+
+                    /* WeChat端消息处理 */
+                    case "WC":
+                       
+                        break;
+
+                    /* WinPC端消息处理 */
+                    case "PC":
+                        
+
+                        break;
+                    default:
+                        Logger("Hi");
+                        break;
+                }         
+
             }
-            catch (Exception)
-            {
-            }
+
+            //try
+            //{
+            //    while (isNormalExit == false)
+            //    {
+            //        byte[] buffer = new byte[1024 * 1024 * 5];
+            //        int r = socketSend.Receive(buffer);
+            //        if (r == 0)
+            //        {
+            //            break;
+            //        }
+            //        string strMsg = Encoding.UTF8.GetString(buffer, 0, r);
+
+            //        switch(strMsg.Substring(0,2)){
+
+            //            /* ZigBee端消息处理 */ 
+            //            case "ZB":
+                            
+            //                if (ZigBee == "")
+            //                {
+            //                    Thread zb = new Thread(Receive);
+            //                    zb.IsBackground = true;
+            //                    zb.Start();
+            //                    ZigBee = socketSend.RemoteEndPoint.ToString();  //保存ZigBee网络地址
+            //                }
+            //                else
+            //                {
+            //                    string newstr = strMsg.Remove(0, 2);
+            //                    Logger("ZigBee向WinPC转发数据：" + newstr);
+            //                    Logger(WinPC);
+            //                    SendData(newstr, WinPC);
+            //                    doZigBee(strMsg);                               //ZigBee端消息处理
+            //                }
+                            
+                            
+            //                break;
+
+            //            /* WeChat端消息处理 */ 
+            //            case "WC":  
+            //                WeChat = socketSend.RemoteEndPoint.ToString();  //保存WeChat网络地址
+            //                doWeChat(strMsg);                               //WeChat端消息处理
+            //                break;
+
+            //            /* WinPC端消息处理 */ 
+            //            case "PC":
+            //                if (WinPC == "")
+            //                {
+            //                    Thread pc = new Thread(Receive);
+            //                    pc.IsBackground = true;
+            //                    pc.Start();
+            //                    WinPC = socketSend.RemoteEndPoint.ToString();   //保存WinPC网络地址
+            //                }
+            //                else {
+            //                    doWinPC(strMsg);                                //WinPC端消息处理
+            //                }
+                            
+            //                break;
+            //        }         
+            //    }
+            //}
+            //catch (Exception)
+            //{
+            //}
 
         }
         #endregion
@@ -203,10 +288,7 @@ namespace ParkingServer
         private void doZigBee(string str) 
         {
             string sqlcmd;
-            //string newstr = str.Remove(0, 2);
-            Logger("ZigBee向WinPC转发数据：" + str);
-            Logger(WinPC);
-            SendData(str,WinPC);
+
             
             if(str.Substring(2,1)=="A"){    //数据：ZBA...........
                 for (int i = 4; i <= str.Length; i++)
@@ -329,6 +411,28 @@ namespace ParkingServer
             txtLog.AppendText("<--服务日志-->" + strMsg + "\r\n");
         }
         #endregion
+
+        private void SendToClient(User user, string message)
+        {
+            try
+            {
+                //将字符串写入网络流，此方法会自动附加字符串长度前缀
+                user.bw.Write(message);
+                user.bw.Flush();
+                //AddItemToListBox(string.Format("向[{0}]发送：{1}", user.userName, message));
+            }
+            catch
+            {
+                //AddItemToListBox(string.Format("向[{0}]发送信息失败", user.userName));
+            }
+        }
+
+        private void RemoveUser(User user)
+        {
+            userList.Remove(user);
+            user.Close();
+            //AddItemToListBox(string.Format("当前连接用户数：{0}", userList.Count));
+        }
 
         private void SocketServer_FormClosing(object sender, FormClosingEventArgs e)
         {
