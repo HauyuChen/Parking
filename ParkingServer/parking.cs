@@ -75,7 +75,7 @@ namespace ParkingServer
                 string strMsg = txtMsg.Text.Trim();
                 byte[] buffer = Encoding.UTF8.GetBytes(strMsg);
                 string selectedIP = cboUserList.SelectedItem.ToString();
-                dicSocket[ZigBee.ToString()].Send(buffer);
+                dicSocket[selectedIP].Send(buffer);
 
                 ShowMsgLocal(string.Format("{0}--{1}:\r\n{2}", "LocalHost", DateTime.Now.ToString(), strMsg));
                 //清除文本框中的内容
@@ -144,8 +144,11 @@ namespace ParkingServer
                     switch(strMsg.Substring(0,2)){
 
                         /* ZigBee端消息处理 */ 
-                        case "ZB":  
-                            ZigBee = socketSend.RemoteEndPoint.ToString();  //保存ZigBee网络地址
+                        case "ZB":
+                            if (ZigBee == "") {
+                                ZigBee = socketSend.RemoteEndPoint.ToString();  //保存ZigBee网络地址
+                            }
+                            
                             doZigBee(strMsg);                               //ZigBee端消息处理
                             break;
 
@@ -156,8 +159,11 @@ namespace ParkingServer
                             break;
 
                         /* WinPC端消息处理 */ 
-                        case "PC":  
-                            WinPC = socketSend.RemoteEndPoint.ToString();   //保存WinPC网络地址
+                        case "PC":
+                            if (WinPC == "") {
+                                WinPC = socketSend.RemoteEndPoint.ToString();   //保存WinPC网络地址
+                            }
+                            
                             doWinPC(strMsg);                                //WinPC端消息处理
                             break;
                     }         
@@ -197,19 +203,23 @@ namespace ParkingServer
         private void doZigBee(string str) 
         {
             string sqlcmd;
-            string newstr = str.Remove(0, 2);
-            SendData(newstr, WinPC);
-            Logger("ZigBee向WinPC转发数据：" + newstr);
+            //string newstr = str.Remove(0, 2);
+            Logger("ZigBee向WinPC转发数据：" + str);
+            Logger(WinPC);
+            SendData(str,WinPC);
+            
             if(str.Substring(2,1)=="A"){    //数据：ZBA...........
-                for (int i = 4; i <= str.Length; i++) {
+                for (int i = 4; i <= str.Length; i++)
+                {
                     if (i < 13)
                     {
-                        sqlcmd = "UPDATE parking SET Pstatus="+ str.Substring(i-1,1)+ " WHERE Pid='A00"+ (i - 3).ToString()+ "'";
+                        sqlcmd = "UPDATE parking SET Pstatus=" + str.Substring(i - 1, 1) + " WHERE Pid='A00" + (i - 3).ToString() + "'";
                     }
-                    else {
+                    else
+                    {
                         sqlcmd = "UPDATE parking SET Pstatus=" + str.Substring(i - 1, 1) + " WHERE Pid='A0" + (i - 3).ToString() + "'";
                     }
-                    MySqlHelper.ExecuteNonQuery(MySqlHelper.Conn, CommandType.Text, sqlcmd , null);     //更新数据库
+                    MySqlHelper.ExecuteNonQuery(MySqlHelper.Conn, CommandType.Text, sqlcmd, null);     //更新数据库
                     Logger("更新数据库：" + sqlcmd);
                 }
                     
@@ -264,8 +274,10 @@ namespace ParkingServer
             switch (newstr)
             {
                 case "LIGHTON":
-                    SendData(newstr, ZigBee);
                     Logger("WinPC向ZigBee转发数据：" + newstr);
+                    Logger(ZigBee);
+                    SendData(newstr, ZigBee);
+                    
                     break;
                 case "LIGHTOFF":
                     SendData(newstr, ZigBee);
