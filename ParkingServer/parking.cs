@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using System.IO;
 
 namespace ParkingServer
 {
@@ -44,6 +45,7 @@ namespace ParkingServer
         #region btnStartBind_Click
         private void btnStartBind_Click(object sender, EventArgs e)
         {
+
             try
             {
                 myListener = new TcpListener(IPAddress.Parse("127.0.0.1"), Convert.ToInt32("10086"));
@@ -107,19 +109,20 @@ namespace ParkingServer
                 try
                 {
                     newClient = myListener.AcceptTcpClient();
+                    
                     //Socket socketWatch = socketObj as Socket;
                     //while (true)
                     //{
                     //    socketSend = socketWatch.Accept();
                     //    Logger(socketSend.RemoteEndPoint.ToString() + "连接成功");
                     //    dicSocket.Add(socketSend.RemoteEndPoint.ToString(), socketSend);
-                    //    cboUserList.Items.Add(socketSend.RemoteEndPoint.ToString());
+                        //cboUserList.Items.Add(socketSend.RemoteEndPoint.ToString());
 
-                    //    //设置Combobox的默认值
-                    //    if (cboUserList.Items.Count > 0)
-                    //    {
-                    //        cboUserList.SelectedIndex = 0;
-                    //    }
+                        ////设置Combobox的默认值
+                        //if (cboUserList.Items.Count > 0)
+                        //{
+                        //    cboUserList.SelectedIndex = 0;
+                        //}
 
                     //    //启动线程
                     //    Thread th = new Thread(Receive);
@@ -139,7 +142,6 @@ namespace ParkingServer
         }
         #endregion
 
-
         /******************************
          ** Receive：接收数据
          */
@@ -151,45 +153,53 @@ namespace ParkingServer
             
             while (isNormalExit == false) {
                 string receiveString = null;
-                
+                string realString = null;
                 try
                 {
-                    Logger("Hi");
                     //从网络流中读出字符串，此方法会自动判断字符串长度前缀
-                    receiveString = user.br.ReadString();
-                    Logger("Hi2222");
-                    Logger(receiveString);
+
+                    
+                    byte[] buffer = new byte[100];
+                    int count = user.br.Read(buffer, 0, 100);
+                    //receiveString = user.br.ReadString();
+                    receiveString = Encoding.Default.GetString(buffer);
+                    //SendToClient(userList[0], "succ");
+                    realString = receiveString.Substring(0,count);
+                    Logger(realString); 
                 }
                 catch (Exception)
                 {
                     if (isNormalExit == false)
                     {
                         //AddItemToListBox(string.Format("与[{0}]失去联系，已终止接收该用户信息", client.Client.RemoteEndPoint));
-                        RemoveUser(user);
+                        //RemoveUser(user);
                     }
                     break;
                 }
-                switch (receiveString)
+                switch (realString.Substring(0, 2))
                 {
-                    
+
                     /* ZigBee端消息处理 */
                     case "ZB":
                         Logger("Hi");
+                        Logger(realString.Length.ToString());
+                        
+                        
                         //Logger(user.userName);
                         break;
 
                     /* WeChat端消息处理 */
                     case "WC":
-                       
+
                         break;
 
                     /* WinPC端消息处理 */
                     case "PC":
-                        
+
 
                         break;
                     default:
-                        Logger("Hi");
+                        //Logger("Hi");
                         break;
                 }         
 
@@ -411,6 +421,26 @@ namespace ParkingServer
             txtLog.AppendText("<--服务日志-->" + strMsg + "\r\n");
         }
         #endregion
+
+        private void SendToAllClient(User user, string message)
+        {
+
+
+                //获取所有客户端在线信息到当前登录用户
+                for (int i = 0; i < userList.Count; i++)
+                {
+                    SendToClient(user, "login," + userList[i].userName);
+                }
+                //把自己上线，发送给所有客户端
+                for (int i = 0; i < userList.Count; i++)
+                {
+                    if (user.userName != userList[i].userName)
+                    {
+                        SendToClient(userList[i], "login," + user.userName);
+                    }
+                }
+
+        }
 
         private void SendToClient(User user, string message)
         {

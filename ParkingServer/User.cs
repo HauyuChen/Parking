@@ -13,13 +13,21 @@ namespace ParkingServer
         public BinaryReader br { get; private set; }
         public BinaryWriter bw { get; private set; }
         public string userName { get; set; }
+        public NetworkStream networkStream;
+
 
         public User(TcpClient client)
         {
-            this.client = client;
-            NetworkStream networkStream = client.GetStream();
-            br = new BinaryReader(networkStream);
-            bw = new BinaryWriter(networkStream);
+            try
+            {
+                this.client = client;
+                networkStream = client.GetStream();
+                br = new BinaryReader(networkStream);
+                bw = new BinaryWriter(networkStream);
+            }
+            catch (Exception){ 
+            
+            }
         }
 
         public void Close()
