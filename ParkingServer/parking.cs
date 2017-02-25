@@ -16,8 +16,8 @@ namespace ParkingServer
     {
         private List<User> userList = new List<User>();
         private TcpListener myListener;
-        Socket socketWatch;
-        Socket socketSend;
+        //Socket socketWatch;
+        //Socket socketSend;
         Dictionary<string, Socket> dicSocket = new Dictionary<string, Socket>();
         string ZigBee="";  //标识：ZigBee网络地址
         string WeChat="";  //标识：WeChat网络地址
@@ -157,46 +157,41 @@ namespace ParkingServer
                 try
                 {
                     //从网络流中读出字符串，此方法会自动判断字符串长度前缀
-
-                    
                     byte[] buffer = new byte[100];
                     int count = user.br.Read(buffer, 0, 100);
-                    //receiveString = user.br.ReadString();
                     receiveString = Encoding.Default.GetString(buffer);
-                    //SendToClient(userList[0], "succ");
                     realString = receiveString.Substring(0,count);
-                    Logger(realString); 
+                    //Logger(realString); 
                 }
                 catch (Exception)
                 {
                     if (isNormalExit == false)
                     {
-                        //AddItemToListBox(string.Format("与[{0}]失去联系，已终止接收该用户信息", client.Client.RemoteEndPoint));
-                        //RemoveUser(user);
+                        RemoveUser(user);
                     }
                     break;
                 }
-                switch (realString.Substring(0, 2))
+                switch (realString.Substring(0,2))
                 {
 
                     /* ZigBee端消息处理 */
                     case "ZB":
-                        Logger("Hi");
-                        Logger(realString.Length.ToString());
-                        
-                        
-                        //Logger(user.userName);
+                        string newstr = realString.Remove(0, 2);
+                        Logger("ZigBee向WinPC转发数据：" + newstr);
+                        Logger(WinPC);
+                        SendData(newstr, WinPC);
+                        doZigBee(realString);                               //ZigBee端消息处理
                         break;
 
                     /* WeChat端消息处理 */
                     case "WC":
-
+                        WeChat = socketSend.RemoteEndPoint.ToString();  //保存WeChat网络地址
+                        doWeChat(realString);                               //WeChat端消息处理
                         break;
 
                     /* WinPC端消息处理 */
                     case "PC":
-
-
+                        doWinPC(realString);                                //WinPC端消息处理
                         break;
                     default:
                         //Logger("Hi");
@@ -205,68 +200,7 @@ namespace ParkingServer
 
             }
 
-            //try
-            //{
-            //    while (isNormalExit == false)
-            //    {
-            //        byte[] buffer = new byte[1024 * 1024 * 5];
-            //        int r = socketSend.Receive(buffer);
-            //        if (r == 0)
-            //        {
-            //            break;
-            //        }
-            //        string strMsg = Encoding.UTF8.GetString(buffer, 0, r);
-
-            //        switch(strMsg.Substring(0,2)){
-
-            //            /* ZigBee端消息处理 */ 
-            //            case "ZB":
-                            
-            //                if (ZigBee == "")
-            //                {
-            //                    Thread zb = new Thread(Receive);
-            //                    zb.IsBackground = true;
-            //                    zb.Start();
-            //                    ZigBee = socketSend.RemoteEndPoint.ToString();  //保存ZigBee网络地址
-            //                }
-            //                else
-            //                {
-            //                    string newstr = strMsg.Remove(0, 2);
-            //                    Logger("ZigBee向WinPC转发数据：" + newstr);
-            //                    Logger(WinPC);
-            //                    SendData(newstr, WinPC);
-            //                    doZigBee(strMsg);                               //ZigBee端消息处理
-            //                }
-                            
-                            
-            //                break;
-
-            //            /* WeChat端消息处理 */ 
-            //            case "WC":  
-            //                WeChat = socketSend.RemoteEndPoint.ToString();  //保存WeChat网络地址
-            //                doWeChat(strMsg);                               //WeChat端消息处理
-            //                break;
-
-            //            /* WinPC端消息处理 */ 
-            //            case "PC":
-            //                if (WinPC == "")
-            //                {
-            //                    Thread pc = new Thread(Receive);
-            //                    pc.IsBackground = true;
-            //                    pc.Start();
-            //                    WinPC = socketSend.RemoteEndPoint.ToString();   //保存WinPC网络地址
-            //                }
-            //                else {
-            //                    doWinPC(strMsg);                                //WinPC端消息处理
-            //                }
-                            
-            //                break;
-            //        }         
-            //    }
-            //}
-            //catch (Exception)
-            //{
-            //}
+            
 
         }
         #endregion
@@ -299,7 +233,6 @@ namespace ParkingServer
         {
             string sqlcmd;
 
-            
             if(str.Substring(2,1)=="A"){    //数据：ZBA...........
                 for (int i = 4; i <= str.Length; i++)
                 {
@@ -313,8 +246,7 @@ namespace ParkingServer
                     }
                     MySqlHelper.ExecuteNonQuery(MySqlHelper.Conn, CommandType.Text, sqlcmd, null);     //更新数据库
                     Logger("更新数据库：" + sqlcmd);
-                }
-                    
+                }       
             }
             else if (str.Substring(2, 1) == "B")    //数据：ZBB...........
             {
@@ -424,22 +356,19 @@ namespace ParkingServer
 
         private void SendToAllClient(User user, string message)
         {
-
-
-                //获取所有客户端在线信息到当前登录用户
-                for (int i = 0; i < userList.Count; i++)
+            //获取所有客户端在线信息到当前登录用户
+            for (int i = 0; i < userList.Count; i++)
+            {
+                SendToClient(user, "login," + userList[i].userName);
+            }
+            //把自己上线，发送给所有客户端
+            for (int i = 0; i < userList.Count; i++)
+            {
+                if (user.userName != userList[i].userName)
                 {
-                    SendToClient(user, "login," + userList[i].userName);
+                    SendToClient(userList[i], "login," + user.userName);
                 }
-                //把自己上线，发送给所有客户端
-                for (int i = 0; i < userList.Count; i++)
-                {
-                    if (user.userName != userList[i].userName)
-                    {
-                        SendToClient(userList[i], "login," + user.userName);
-                    }
-                }
-
+            }
         }
 
         private void SendToClient(User user, string message)
@@ -449,11 +378,10 @@ namespace ParkingServer
                 //将字符串写入网络流，此方法会自动附加字符串长度前缀
                 user.bw.Write(message);
                 user.bw.Flush();
-                //AddItemToListBox(string.Format("向[{0}]发送：{1}", user.userName, message));
             }
             catch
             {
-                //AddItemToListBox(string.Format("向[{0}]发送信息失败", user.userName));
+                
             }
         }
 
@@ -461,7 +389,6 @@ namespace ParkingServer
         {
             userList.Remove(user);
             user.Close();
-            //AddItemToListBox(string.Format("当前连接用户数：{0}", userList.Count));
         }
 
         private void SocketServer_FormClosing(object sender, FormClosingEventArgs e)
