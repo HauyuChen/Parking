@@ -1,4 +1,9 @@
-﻿using System;
+﻿/******************************
+** Author：Hauyu.Chen
+** Email：mrchenhy@Gmail.com
+*/
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -16,12 +21,13 @@ namespace ParkingServer
     {
         private List<User> userList = new List<User>();
         private TcpListener myListener;
-        //Socket socketWatch;
-        //Socket socketSend;
+
         Dictionary<string, Socket> dicSocket = new Dictionary<string, Socket>();
+
         string ZigBee=null;  //标识：ZigBee网络地址
         string WeChat=null;  //标识：WeChat网络地址
         string WinPC=null;   //标识：WinPC网络地址
+
         bool isNormalExit = false;
 
 
@@ -50,11 +56,6 @@ namespace ParkingServer
             {
                 myListener = new TcpListener(IPAddress.Parse("127.0.0.1"), Convert.ToInt32("10086"));
                 myListener.Start();
-                //socketWatch = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                //IPEndPoint point = new IPEndPoint(IPAddress.Parse("127.0.0.1"), Convert.ToInt32("10086"));
-                //socketWatch.Bind(point);
-                //Logger("启动服务器成功。");
-                //socketWatch.Listen(10);
 
                 //启动线程
                 Thread th = new Thread(Accept);
@@ -85,12 +86,12 @@ namespace ParkingServer
                 string selectedIP = cboUserList.SelectedItem.ToString();
                 dicSocket[selectedIP].Send(buffer);
 
-                ShowMsgLocal(string.Format("{0}--{1}:\r\n{2}", "LocalHost", DateTime.Now.ToString(), strMsg));
                 //清除文本框中的内容
                 txtMsg.Clear();
             }
             catch (Exception)
             {
+
             }
         }
         #endregion
@@ -109,28 +110,8 @@ namespace ParkingServer
                 try
                 {
                     newClient = myListener.AcceptTcpClient();
-                    
-                    //Socket socketWatch = socketObj as Socket;
-                    //while (true)
-                    //{
-                    //    socketSend = socketWatch.Accept();
-                    //    Logger(socketSend.RemoteEndPoint.ToString() + "连接成功");
-                    //    dicSocket.Add(socketSend.RemoteEndPoint.ToString(), socketSend);
-                        //cboUserList.Items.Add(socketSend.RemoteEndPoint.ToString());
-
-                        ////设置Combobox的默认值
-                        //if (cboUserList.Items.Count > 0)
-                        //{
-                        //    cboUserList.SelectedIndex = 0;
-                        //}
-
-                    //    //启动线程
-                    //    Thread th = new Thread(Receive);
-                    //    th.IsBackground = true;
-                    //    th.Start();
-                    //}
                 }
-                catch
+                catch(Exception)
                 {
                     break;
                 }
@@ -169,26 +150,28 @@ namespace ParkingServer
                         /* ZigBee端消息处理 */
                         case "ZB":
                             ZigBee = user.client.Client.RemoteEndPoint.ToString();
-                            Logger("ZigBee端：" + ZigBee);
-
+                            Logger("  ZigBee端：" + ZigBee);
 
                             doZigBee(receiveString);                               //ZigBee端消息处理
+
                             break;
 
                         /* WeChat端消息处理 */
                         case "WC":
                             WeChat = user.client.Client.RemoteEndPoint.ToString();
-                            Logger("WeChat端：" + WeChat);
+                            Logger("  WeChat端：" + WeChat);
 
                             doWeChat(receiveString);                               //WeChat端消息处理
+
                             break;
 
                         /* WinPC端消息处理 */
                         case "PC":
                             WinPC = user.client.Client.RemoteEndPoint.ToString();
-                            Logger("WinPC端：" + WinPC);
+                            Logger("  WinPC端：" + WinPC);
 
                             doWinPC(receiveString);                                //WinPC端消息处理
+
                             break;
                         default:
                             //Logger("Hi");
@@ -213,6 +196,9 @@ namespace ParkingServer
         }
         #endregion
 
+        /******************************
+         ** SendMsg：向特定的客户端发送数据
+         */
         private void SendMsg(string obj,string msg) {
             for (int i = 0; i < userList.Count; i++)
             {
@@ -236,7 +222,7 @@ namespace ParkingServer
             if (WinPC != null)
             {
                 data = str.Remove(0, 2);
-                Logger("数据转发>>>ZigBee向WinPC转发数据：" + data);
+                Logger("  数据转发>>>ZigBee向WinPC转发数据：" + data);
                 SendMsg(WinPC, data);
             }
 
@@ -255,7 +241,7 @@ namespace ParkingServer
                     }
                     MySqlHelper.ExecuteNonQuery(MySqlHelper.Conn, CommandType.Text, sqlcmd, null);     //更新数据库
                 }
-                Logger("数据库操作>>>成功更新A区车位信息");
+                Logger("  数据库操作>>>成功更新A区车位信息");
             }
             else if (str.Substring(2, 1) == "B")    //数据：ZBB...........
             {
@@ -271,13 +257,13 @@ namespace ParkingServer
                     }
                     MySqlHelper.ExecuteNonQuery(MySqlHelper.Conn, CommandType.Text, sqlcmd, null);   //更新数据库
                 }
-                Logger("数据库操作>>>成功更新B区车位信息");
+                Logger("  数据库操作>>>成功更新B区车位信息");
             }
             else if (str.Substring(2, 5) == "LIGHT")    //数据：ZBLIGHT...........
             {
                 sqlcmd = "UPDATE light SET lx='" + str.Substring(7, 5) + "',state=" + str.Substring(22, 1);
                 MySqlHelper.ExecuteNonQuery(MySqlHelper.Conn, CommandType.Text, sqlcmd, null);      //更新数据库
-                Logger("数据库操作>>>成功更新照明信息");
+                Logger("  数据库操作>>>成功更新照明信息");
             }
             
         }
@@ -308,7 +294,7 @@ namespace ParkingServer
             if (ZigBee != null)
             {
                 data = str.Remove(0, 2);
-                Logger("数据转发>>>WinPC向ZigBee转发数据：" + data);
+                Logger("  数据转发>>>WinPC向ZigBee转发数据：" + data);
                 SendMsg(ZigBee, data);
             }
         }
@@ -317,17 +303,17 @@ namespace ParkingServer
         /******************************
          ** SendData：发送数据给指定的端口
          */
-        private void SendData(string msg,string endpoint) {
-            try
-            {
-                byte[] buffer = Encoding.UTF8.GetBytes(msg);
-                dicSocket[endpoint].Send(buffer);
-            }
-            catch (Exception)
-            {
+        //private void SendData(string msg,string endpoint) {
+        //    try
+        //    {
+        //        byte[] buffer = Encoding.UTF8.GetBytes(msg);
+        //        dicSocket[endpoint].Send(buffer);
+        //    }
+        //    catch (Exception)
+        //    {
 
-            }
-        }
+        //    }
+        //}
 
         /******************************
          ** Logger：窗口显示发送的数据内容
@@ -339,15 +325,9 @@ namespace ParkingServer
         }
         #endregion
 
-        #region ShowMsgLocal
-        private void ShowMsgLocal(string strMsg)
-        {
-            txtLog.AppendText("<--服务日志--> " + DateTime.Now + "\r\n" + strMsg + "\r\n");
-        }
-        #endregion
-
-
-
+        /******************************
+         ** SendToClient：将数据写入特定客户端的网络流
+         */
         private void SendToClient(User user, string message)
         {
             try
@@ -362,12 +342,19 @@ namespace ParkingServer
             }
         }
 
+        /******************************
+         ** RemoveUser：删除用户
+         */
         private void RemoveUser(User user)
         {
             userList.Remove(user);
             user.Close();
         }
 
+
+        /******************************
+         ** MainForm_FormClosing：关闭本程序时的处理
+         */
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (myListener != null) {
