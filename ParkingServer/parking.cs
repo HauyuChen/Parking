@@ -16,12 +16,12 @@ namespace ParkingServer
     {
         private List<User> userList = new List<User>();
         private TcpListener myListener;
-        //Socket socketWatch;
-        //Socket socketSend;
+        Socket socketWatch;
+        Socket socketSend;
         Dictionary<string, Socket> dicSocket = new Dictionary<string, Socket>();
-        string ZigBee="";  //标识：ZigBee网络地址
-        string WeChat="";  //标识：WeChat网络地址
-        string WinPC="";   //标识：WinPC网络地址
+        string ZigBee=null;  //标识：ZigBee网络地址
+        string WeChat=null;  //标识：WeChat网络地址
+        string WinPC=null;   //标识：WinPC网络地址
         bool isNormalExit = false;
 
 
@@ -171,27 +171,46 @@ namespace ParkingServer
                     }
                     break;
                 }
-                switch (realString.Substring(0,2))
+                string newstr;
+                string target = realString.Substring(0, 2);
+                user.userName = user.client.Client.RemoteEndPoint.ToString();  
+                switch (target)
                 {
+                      
 
                     /* ZigBee端消息处理 */
                     case "ZB":
-                        string newstr = realString.Remove(0, 2);
-                        Logger("ZigBee向WinPC转发数据：" + newstr);
-                        Logger(WinPC);
-                        SendData(newstr, WinPC);
-                        doZigBee(realString);                               //ZigBee端消息处理
+                        ZigBee = user.client.Client.RemoteEndPoint.ToString();
+                        Logger(ZigBee);
+                        if (WinPC != null)
+                        {
+                            newstr = realString.Remove(0, 2);
+                            Logger("ZigBee向WinPC转发数据：" + newstr);
+                            Logger(WinPC);
+                            SendMsg(WinPC, newstr);
+                        }
+                        //doZigBee(realString);                               //ZigBee端消息处理
                         break;
 
                     /* WeChat端消息处理 */
                     case "WC":
-                        WeChat = socketSend.RemoteEndPoint.ToString();  //保存WeChat网络地址
+                        //WeChat = socketSend.RemoteEndPoint.ToString();  //保存WeChat网络地址
                         doWeChat(realString);                               //WeChat端消息处理
                         break;
 
                     /* WinPC端消息处理 */
                     case "PC":
-                        doWinPC(realString);                                //WinPC端消息处理
+                        WinPC = user.client.Client.RemoteEndPoint.ToString();
+                        Logger(WinPC);
+                        if (ZigBee != null)
+                        {
+                            newstr = realString.Remove(0, 2);
+                            Logger("WinPC向ZigBee转发数据：" + newstr);
+                            Logger(WinPC);
+                            SendMsg(ZigBee, newstr);
+                        }
+                       
+                        //doWinPC(realString);                                //WinPC端消息处理
                         break;
                     default:
                         //Logger("Hi");
@@ -205,7 +224,15 @@ namespace ParkingServer
         }
         #endregion
 
-
+        private void SendMsg(string obj,string msg) {
+            for (int i = 0; i < userList.Count; i++)
+            {
+                if (userList[i].userName == obj)
+                {
+                    SendToClient(userList[i], msg);
+                }
+            }
+        }
 
         //private void MsgSend(string msg,EndPoint SS) {
         //    try
@@ -298,14 +325,12 @@ namespace ParkingServer
             switch (newstr)
             {
                 case "LIGHTON":
-                    Logger("WinPC向ZigBee转发数据：" + newstr);
-                    Logger(ZigBee);
+
                     SendData(newstr, ZigBee);
-                    
                     break;
                 case "LIGHTOFF":
                     SendData(newstr, ZigBee);
-                    Logger("WinPC向ZigBee转发数据：" + newstr);
+
                     break;
                 case "MANUAL":
                     SendData(newstr, ZigBee);
