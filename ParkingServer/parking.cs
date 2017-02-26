@@ -16,8 +16,8 @@ namespace ParkingServer
     {
         private List<User> userList = new List<User>();
         private TcpListener myListener;
-        Socket socketWatch;
-        Socket socketSend;
+        //Socket socketWatch;
+        //Socket socketSend;
         Dictionary<string, Socket> dicSocket = new Dictionary<string, Socket>();
         string ZigBee=null;  //标识：ZigBee网络地址
         string WeChat=null;  //标识：WeChat网络地址
@@ -159,9 +159,7 @@ namespace ParkingServer
                     //从网络流中读出字符串，此方法会自动判断字符串长度前缀
                     byte[] buffer = new byte[100];
                     int count = user.br.Read(buffer, 0, 100);
-                    receiveString = Encoding.Default.GetString(buffer);
-                    realString = receiveString.Substring(0,count);
-                    //Logger(realString); 
+                    receiveString = Encoding.Default.GetString(buffer).Substring(0, count);
                 }
                 catch (Exception)
                 {
@@ -171,8 +169,8 @@ namespace ParkingServer
                     }
                     break;
                 }
-                string newstr;
-                string target = realString.Substring(0, 2);
+                string str;
+                string target = receiveString.Substring(0, 2);
                 user.userName = user.client.Client.RemoteEndPoint.ToString();  
                 switch (target)
                 {
@@ -184,18 +182,19 @@ namespace ParkingServer
                         Logger(ZigBee);
                         if (WinPC != null)
                         {
-                            newstr = realString.Remove(0, 2);
-                            Logger("ZigBee向WinPC转发数据：" + newstr);
+                            str = receiveString.Remove(0, 2);
+                            Logger("ZigBee向WinPC转发数据：" + str);
                             Logger(WinPC);
-                            SendMsg(WinPC, newstr);
+                            SendMsg(WinPC, str);
                         }
-                        //doZigBee(realString);                               //ZigBee端消息处理
+
+                        doZigBee(receiveString);                               //ZigBee端消息处理
                         break;
 
                     /* WeChat端消息处理 */
                     case "WC":
                         //WeChat = socketSend.RemoteEndPoint.ToString();  //保存WeChat网络地址
-                        doWeChat(realString);                               //WeChat端消息处理
+                        doWeChat(receiveString);                               //WeChat端消息处理
                         break;
 
                     /* WinPC端消息处理 */
@@ -204,13 +203,13 @@ namespace ParkingServer
                         Logger(WinPC);
                         if (ZigBee != null)
                         {
-                            newstr = realString.Remove(0, 2);
-                            Logger("WinPC向ZigBee转发数据：" + newstr);
+                            str = receiveString.Remove(0, 2);
+                            Logger("WinPC向ZigBee转发数据：" + str);
                             Logger(WinPC);
-                            SendMsg(ZigBee, newstr);
+                            SendMsg(ZigBee, str);
                         }
-                       
-                        //doWinPC(realString);                                //WinPC端消息处理
+
+                        //doWinPC(receiveString);                                //WinPC端消息处理
                         break;
                     default:
                         //Logger("Hi");
@@ -260,7 +259,8 @@ namespace ParkingServer
         {
             string sqlcmd;
 
-            if(str.Substring(2,1)=="A"){    //数据：ZBA...........
+            if (str.Substring(2,1) != null && str.Substring(2,1) == "A")  //数据：ZBA...........
+            {    
                 for (int i = 4; i <= str.Length; i++)
                 {
                     if (i < 13)
@@ -416,16 +416,17 @@ namespace ParkingServer
             user.Close();
         }
 
-        private void SocketServer_FormClosing(object sender, FormClosingEventArgs e)
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            try
-            {
-                socketSend.Close();
-            }
-            catch (Exception)
-            {
+            if (myListener != null) {
+                isNormalExit = true;
+                for (int i = userList.Count - 1; i >= 0; i--)
+                {
+                    RemoveUser(userList[i]);
+                }
+                //通过停止监听让 myListener.AcceptTcpClient() 产生异常退出监听线程
+                myListener.Stop();
             }
         }
-
     }
 }

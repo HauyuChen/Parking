@@ -121,7 +121,7 @@
             this.Name = "SocketServer";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Parking";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.SocketServer_FormClosing);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.Load += new System.EventHandler(this.SocketServer_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
