@@ -61,6 +61,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Functionality.cs" />
     <Compile Include="MySQLHelper.cs" />
     <Compile Include="parking.cs">
       <SubType>Form</SubType>

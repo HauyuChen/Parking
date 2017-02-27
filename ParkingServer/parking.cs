@@ -217,6 +217,7 @@ namespace ParkingServer
         {
             string sqlcmd;
             string data;
+            int idle=0;
 
             /* 数据转发：将ZigBee端发送过来的数据转发给WinPC端 */
             if (WinPC != null)
@@ -226,6 +227,16 @@ namespace ParkingServer
                 SendMsg(WinPC, data);
             }
 
+            /* 数据转发：将ZigBee端发送过来的数据转发给WeChat端 */
+            if (WeChat != null)
+            {
+                data = str.Remove(0, 2);
+                Logger("  数据转发>>>ZigBee向WeChat转发数据：" + data);
+                SendMsg(WeChat, data);
+            }
+
+
+
             /* 更新数据库 */
             if (str.Substring(2,1) != null && str.Substring(2,1) == "A")  //数据：ZBA...........
             {    
@@ -233,15 +244,30 @@ namespace ParkingServer
                 {
                     if (i < 13)
                     {
+                        
                         sqlcmd = "UPDATE parking SET Pstatus=" + str.Substring(i - 1, 1) + " WHERE Pid='A00" + (i - 3).ToString() + "'";
                     }
                     else
                     {
                         sqlcmd = "UPDATE parking SET Pstatus=" + str.Substring(i - 1, 1) + " WHERE Pid='A0" + (i - 3).ToString() + "'";
                     }
+                    if (str.Substring(i - 1, 1) == "0")
+                    {
+                        idle++; //空闲车位计数
+                    }
                     MySqlHelper.ExecuteNonQuery(MySqlHelper.Conn, CommandType.Text, sqlcmd, null);     //更新数据库
                 }
                 Logger("  数据库操作>>>成功更新A区车位信息");
+                /* 数据回传：将计算后的空闲车位数回传给ZigBee端 */
+                if (idle < 10)
+                {
+                    SendMsg(ZigBee, "PA0" + idle.ToString());
+                    Logger("  A区空闲车位数：" + idle.ToString());
+                }
+                else {
+                    SendMsg(ZigBee, "PA" + idle.ToString());
+                    Logger("  A区空闲车位数：" + idle.ToString());
+                }
             }
             else if (str.Substring(2, 1) == "B")    //数据：ZBB...........
             {
@@ -255,9 +281,24 @@ namespace ParkingServer
                     {
                         sqlcmd = "UPDATE parking SET Pstatus=" + str.Substring(i - 1, 1) + " WHERE Pid='B0" + (i - 3).ToString() + "'";
                     }
+                    if (str.Substring(i - 1, 1) == "0")
+                    {
+                        idle++; //空闲车位计数
+                    }
                     MySqlHelper.ExecuteNonQuery(MySqlHelper.Conn, CommandType.Text, sqlcmd, null);   //更新数据库
                 }
                 Logger("  数据库操作>>>成功更新B区车位信息");
+                /* 数据回传：将计算后的空闲车位数回传给ZigBee端 */
+                if (idle < 10)
+                {
+                    SendMsg(ZigBee, "PB0" + idle.ToString());
+                    Logger("  B区空闲车位数：" + idle.ToString());
+                }
+                else
+                {
+                    SendMsg(ZigBee, "PB" + idle.ToString());
+                    Logger("  B区空闲车位数：" + idle.ToString());
+                }
             }
             else if (str.Substring(2, 5) == "LIGHT")    //数据：ZBLIGHT...........
             {
@@ -274,6 +315,51 @@ namespace ParkingServer
          */
         private void doWeChat(string str)
         {
+            Functionality func = new Functionality();
+            try
+            {
+                if (str.Substring(2, 6) == "search")    //Done
+                {
+                    string msg = func.searchFree();
+                    Logger("停车场空闲车位数：" + msg);
+                }
+                else if (str.Substring(0, 6) == "insert")
+                {
+                    //func.addUser(str);
+                }
+                else if (str.Substring(0, 6) == "update")
+                {
+                    //func.updateInfo();
+                }
+                else if (str.Substring(0, 3) == "use")
+                {
+                    //func.positionUsed();
+                }
+                else if (str.Substring(0, 4) == "free")
+                {
+                    //func.positionFree();
+                }
+                else if (str.Substring(2, 2) == "Li")   //Done
+                {
+                    SendMsg(ZigBee,str.Remove(0,2));
+                }
+                else if (str.Substring(0, 4) == "look")
+                {
+                    //func.userCheck();
+                }
+                else if (str.Substring(0, 5) == "admin")
+                {
+
+                }
+                else if (str.Substring(0, 7) == "unadmin")
+                {
+
+                }
+            }
+            catch(Exception){
+                
+            }
+
             //DataTable table = MySqlHelper.GetDataSet(MySqlHelper.Conn, CommandType.Text, "select * from parking", null).Tables[0];
             //DataRowCollection rows = table.Rows;
             //for (int i = 0; i < rows.Count; i++)
@@ -319,7 +405,7 @@ namespace ParkingServer
          ** Logger：窗口显示发送的数据内容
          */
         #region Logger
-        private void Logger(string strMsg)
+        public void Logger(string strMsg)
         {
             txtLog.AppendText("<--服务日志--> " + DateTime.Now + "\r\n" + strMsg + "\r\n");
         }
