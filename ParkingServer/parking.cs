@@ -56,6 +56,7 @@ namespace ParkingServer
             {
                 myListener = new TcpListener(IPAddress.Parse("127.0.0.1"), Convert.ToInt32("10086"));
                 myListener.Start();
+                Logger("  服务器启动成功！");
 
                 //启动线程
                 Thread th = new Thread(Accept);
@@ -300,7 +301,7 @@ namespace ParkingServer
                     Logger("  B区空闲车位数：" + idle.ToString());
                 }
             }
-            else if (str.Substring(2, 5) == "LIGHT")    //数据：ZBLIGHT...........
+            else if (str.Substring(2, 5) == "LIGHT")    //数据：ZBLIGHT00123lx,status=1
             {
                 sqlcmd = "UPDATE light SET lx='" + str.Substring(7, 5) + "',state=" + str.Substring(22, 1);
                 MySqlHelper.ExecuteNonQuery(MySqlHelper.Conn, CommandType.Text, sqlcmd, null);      //更新数据库
