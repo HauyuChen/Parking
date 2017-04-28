@@ -11,7 +11,7 @@ using System.Data;
 public abstract class MySqlHelper
 {
     //数据库连接字符串
-    public static string Conn = "Database='parking';Data Source='localhost';User Id='root';Password='';charset='utf8';pooling=true";
+    public static string Conn = "Database='ParkingSystem';Data Source='203.195.179.183:6043';User Id='cdb_outerroot';Password='hov110120';charset='utf8';pooling=true";
 
     // 用于缓存参数的HASH表
     private static Hashtable parmCache = Hashtable.Synchronized(new Hashtable());

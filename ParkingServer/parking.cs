@@ -54,7 +54,7 @@ namespace ParkingServer
 
             try
             {
-                myListener = new TcpListener(IPAddress.Parse("127.0.0.1"), Convert.ToInt32("10086"));
+                myListener = new TcpListener(IPAddress.Parse("127.0.0.1"), Convert.ToInt32("6000"));
                 myListener.Start();
                 Logger("  服务器启动成功！");
 

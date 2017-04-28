@@ -1,0 +1,8 @@
+E:\GithubResp\Parking\ParkingServer\obj\x86\Release\ParkingServer.SocketServer.resources
+E:\GithubResp\Parking\ParkingServer\obj\x86\Release\ParkingServer.Properties.Resources.resources
+E:\GithubResp\Parking\ParkingServer\obj\x86\Release\ParkingServer.csproj.GenerateResource.Cache
+E:\GithubResp\Parking\ParkingServer\bin\Release\ParkingServer.exe
+E:\GithubResp\Parking\ParkingServer\bin\Release\ParkingServer.pdb
+E:\GithubResp\Parking\ParkingServer\obj\x86\Release\ParkingServer.csprojResolveAssemblyReference.cache
+E:\GithubResp\Parking\ParkingServer\obj\x86\Release\ParkingServer.exe
+E:\GithubResp\Parking\ParkingServer\obj\x86\Release\ParkingServer.pdb
