@@ -322,6 +322,7 @@ namespace ParkingServer
                 if (str.Substring(2, 6) == "search")    //Done
                 {
                     string msg = func.searchFree();
+                    //SendMsg(WeChat, msg);
                     Logger("停车场空闲车位数：" + msg);
                 }
                 else if (str.Substring(0, 6) == "insert")
